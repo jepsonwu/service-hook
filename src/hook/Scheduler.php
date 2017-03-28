@@ -15,57 +15,57 @@ namespace Jepsonwu\hook;
  */
 class Scheduler
 {
-    private static $hooks = [];
+    private static $instance;
 
-    /**
-     * @var Collection
-     */
-    private static $collection;
+    private $group;
+    private $hooks = [];
 
-    public static function register($name, callable $function)
+    public static function instance($group = "")
     {
-        self::$hooks[$name] = $function;
+        is_null(self::$instance[$group]) &&
+        self::$instance[$group] = new self($group);
+
+        return self::$instance[$group];
     }
 
-    public static function get($name)
+    private function __construct($group)
     {
-        return isset(self::$hooks[$name]) && is_callable(self::$hooks[$name]) ? self::$hooks[$name] : false;
+        $this->group = $group;
+        $this->hooks[$group] = [];
     }
 
-    public static function run($name, $result = null)
+    public function register($name, callable $function)
+    {
+        $this->hooks[$this->group][$name] = $function;
+    }
+
+    public function get($name)
+    {
+        $hooks = $this->hooks[$this->group];
+        return isset($hooks[$name]) && is_callable($hooks[$name]) ? $hooks[$name] : false;
+    }
+
+    public function run($name, $result = null)
     {
         if ($result !== false) {
-            $callback = self::get($name);
+            $callback = $this->get($name);
             $callback && $result = call_user_func_array($callback, is_null($result) ? [] : [$result]);
         }
 
         return $result;
     }
 
-    /**
-     * @param Collection $collection
-     */
-    public static function registerCollection(Collection $collection)
+    private function getHooks()
     {
-        self::$collection = $collection;
+        asort($this->hooks[$this->group]);
+        return array_keys($this->hooks[$this->group]);
     }
 
-    private static function getHooks()
-    {
-        $collection = self::$collection;
-        if (is_null($collection))
-            throw new \Exception("must be register collection");
-
-        $hooks = (array)$collection::getHooks();
-        asort($hooks);
-        return $hooks;
-    }
-
-    public static function exec($result = null)
+    public function exec($result = null)
     {
         if ($result !== false) {
-            foreach (self::getHooks() as $hook => $name) {
-                $result = self::run($name, $result);
+            foreach ($this->getHooks() as $name) {
+                $result = $this->run($name, $result);
             }
         }
         return $result;

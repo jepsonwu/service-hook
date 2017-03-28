@@ -3,7 +3,7 @@
 <phpunit bootstrap="vendor/autoload.php" colors="true">
     <testsuites>
         <testsuite name="Service Hook Test Suite">
-            <directory>tests/mysqli/</directory>
+            <directory>tests/hook/</directory>
         </testsuite>
     </testsuites>
 

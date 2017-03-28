@@ -13,43 +13,61 @@ require_once "MyCollection.php";
  */
 class HookTest extends TestCase
 {
-    public function testRun()
+    const SEX_HOOK = 1;
+    const INFO_HOOK = 2;
+
+    /**
+     * @return Scheduler
+     */
+    public function testScheduler()
     {
-        $this->registerPersonInfoHook();
+        return Scheduler::instance("person");
+    }
+
+    /**
+     * @depends testScheduler
+     * @param Scheduler $scheduler
+     */
+    public function testRun(Scheduler $scheduler)
+    {
+        $this->registerPersonInfoHook($scheduler);
 
         $result = "man";
-        $result = Scheduler::run(MyCollection::$hook['person']['info'], $result);
+        $result = $scheduler->run(self::INFO_HOOK, $result);
         $this->assertTrue($result == "this is person infomation:name:jepson,age:26,sex:man", "hook run failed,result:man!");
 
         $result = false;
-        $result = Scheduler::run(MyCollection::$hook['person']['info'], $result);
+        $result = $scheduler->run(self::INFO_HOOK, $result);
         $this->assertTrue($result === false, "hook run failed,result:false");
 
         $result = null;
-        $result = Scheduler::run(MyCollection::$hook['person']['info'], $result);
+        $result = $scheduler->run(self::INFO_HOOK, $result);
         $this->assertTrue($result == "this is person infomation:name:jepson,age:26", "hook run failed,result:null");
     }
 
-    public function testExec()
+    /**
+     * @depends testScheduler
+     * @param Scheduler $scheduler
+     */
+    public function testExec(Scheduler $scheduler)
     {
-        $this->registerPersonSexHook();
-        $this->registerPersonInfoHook();
+        $this->registerPersonSexHook($scheduler);
+        $this->registerPersonInfoHook($scheduler);
 
-        Scheduler::registerCollection(new MyCollection());
         $result = "man";
-        $result = Scheduler::exec($result);
+        $result = $scheduler->exec($result);
         $this->assertTrue($result == "this is person infomation:name:jepson,age:26,sex:1", "hook exec failed,result:man");
     }
 
-    public function registerPersonSexHook()
+    public function registerPersonSexHook(Scheduler $scheduler)
     {
         $hook = new Hook(function ($sex) {
             return $sex == "man" ? 1 : 0;
         });
-        Scheduler::register(MyCollection::$hook['person']['sex'], $hook);
+        $scheduler->register(self::SEX_HOOK, $hook);
     }
 
-    public function registerPersonInfoHook()
+    public function registerPersonInfoHook(Scheduler $scheduler)
     {
         $hook = new Hook(function ($name, $age, $sex = null) {
             return "this is person infomation:name:{$name},age:{$age}" . (is_null($sex) ? "" : ",sex:{$sex}");
@@ -57,6 +75,6 @@ class HookTest extends TestCase
         $hook['name'] = "jepson";
         $hook["age"] = 26;
 
-        Scheduler::register(MyCollection::$hook['person']['info'], $hook);
+        $scheduler->register(self::INFO_HOOK, $hook);
     }
 }
