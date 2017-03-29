@@ -3,8 +3,6 @@ namespace Jepsonwu\hook;
 
 use PHPUnit\Framework\TestCase;
 
-require_once "MyCollection.php";
-
 /**
  * Created by PhpStorm.
  * User: jepsonwu
